@@ -32,11 +32,14 @@ Frontend:
 - HTML
 - CSS
 - JavaScript
+  
 Backend:
 - Python
 - Flask
+  
 Database:
 - SQLite
+  
 AI Integration:
 - Groq API
 - AI Prompt Engineering
@@ -57,13 +60,7 @@ AI Integration:
 - Mobile App Version
 
 ## Run Locally
-Install Requirements
-
 ```bash
 pip install -r requirements.txt
-
-## Run Application
-
-```bash
 python app.py
 
