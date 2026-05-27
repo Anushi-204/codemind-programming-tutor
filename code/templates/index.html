@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}Learn · CodeMind{% endblock %}
+
+{% block head %}
+<style>
+  .page { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+  /* Tab nav */
+  .tab-bar {
+    display: flex; gap: 0.4rem; flex-wrap: wrap;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 0.4rem; margin-bottom: 2rem;
+  }
+  .tab-btn {
+    flex: 1; min-width: 100px;
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.6rem 0.8rem; border-radius: 10px;
+    font-family: var(--sans); font-weight: 700; font-size: 0.82rem;
+    border: none; cursor: pointer; background: transparent;
+    color: var(--muted); transition: all 0.18s;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--border); color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .panel-head { margin-bottom: 1.5rem; }
+  .panel-head h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; }
+  .panel-head p  { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+
+  /* Form layout */
+  .form-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
+  .form-row .fg { flex: 1; min-width: 160px; }
+  .form-row .fg label { display: block; margin-bottom: 0.4rem; }
+  .form-row .fg-wide { flex: 3; min-width: 200px; }
+
+  /* Result area */
+  .result-wrap { margin-top: 1.25rem; }
+  .result-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;
+  }
+
+  /* Chat */
+  .chat-window {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); height: 380px; overflow-y: auto;
+    padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem;
+    scroll-behavior: smooth;
+  }
+  .chat-msg { display: flex; gap: 0.75rem; align-items: flex-start; }
+  .chat-msg.user { flex-direction: row-reverse; }
+  .chat-avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700;
+  }
+  .avatar-ai   { background: rgba(124,110,245,0.2); color: var(--accent); }
+  .avatar-user { background: rgba(245,131,110,0.2); color: var(--accent2); }
+  .chat-bubble {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 0.75rem 1rem;
+    font-size: 0.875rem; line-height: 1.65;
+    max-width: 80%; white-space: pre-wrap;
+  }
+  .chat-msg.user .chat-bubble { background: rgba(124,110,245,0.12); border-color: rgba(124,110,245,0.25); }
+  .chat-input-row { display: flex; gap: 0.75rem; margin-top: 1rem; }
+  .chat-input-row input { flex: 1; }
+
+  /* Roadmap */
+  .roadmap-output {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem;
+    font-size: 0.875rem; line-height: 1.8; white-space: pre-wrap;
+    min-height: 120px;
+  }
+
+  /* Copy btn */
+  .copy-btn {
+    padding: 0.3rem 0.7rem; font-size: 0.75rem;
+    background: var(--border); border: none; border-radius: 6px;
+    color: var(--muted); cursor: pointer; font-family: var(--mono);
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: var(--accent); color: #fff; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; }
+
+  /* Welcome banner */
+  .welcome {
+    background: linear-gradient(135deg, rgba(124,110,245,0.08), rgba(82,227,194,0.06));
+    border: 1px solid rgba(124,110,245,0.2); border-radius: 16px;
+    padding: 1.4rem 1.6rem; margin-bottom: 2rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .welcome-icon { font-size: 2rem; }
+  .welcome-text h3 { font-size: 1rem; font-weight: 800; margin-bottom: 0.15rem; }
+  .welcome-text p  { font-size: 0.84rem; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="welcome">
+    <div class="welcome-icon">⚡</div>
+    <div class="welcome-text">
+      <h3>Welcome back! Ready to code?</h3>
+      <p>Pick a tool below — explain concepts, get practice, build tasks, or chat with your AI tutor.</p>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('explain', this)">◈ Explain</button>
+    <button class="tab-btn" onclick="switchTab('practice', this)">◉ Practice</button>
+    <button class="tab-btn" onclick="switchTab('task', this)">◆ Task</button>
+    <button class="tab-btn" onclick="switchTab('roadmap', this)">◎ Roadmap</button>
+    <button class="tab-btn" onclick="switchTab('chat', this)">◇ Chat</button>
+  </div>
+
+  <!-- EXPLAIN -->
+  <div class="panel active" id="panel-explain">
+    <div class="panel-head">
+      <h2>Explain a Concept</h2>
+      <p>Get a clear, level-appropriate explanation of any Python topic.</p>
+    </div>
+    <div class="form-row">
+      <div class="fg fg-wide">
+        <label>Concept</label>
+        <input type="text" id="exp-concept" placeholder="e.g. decorators, list comprehensions, async/await" />
+      </div>
+      <div class="fg">
+        <label>Level</label>
+        <select id="exp-level">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="doExplain()">Explain →</button>
+    </div>
+    <div class="loader" id="exp-loader"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+    <div class="result-wrap" id="exp-result-wrap" style="display:none">
+      <div class="result-header">
+        <div class="result-label">Explanation</div>
+        <button class="copy-btn" onclick="copyResult('exp-result')">copy</button>
+      </div>
+      <div class="response-box" id="exp-result"></div>
+    </div>
+  </div>
+
+  <!-- PRACTICE -->
+  <div class="panel" id="panel-practice">
+    <div class="panel-head">
+      <h2>Practice Questions</h2>
+      <p>Get hands-on questions to test your understanding — no answers included.</p>
+    </div>
+    <div class="form-row">
+      <div class="fg fg-wide">
+        <label>Concept</label>
+        <input type="text" id="prac-concept" placeholder="e.g. recursion, OOP, file I/O" />
+      </div>
+      <div class="fg">
+        <label>Level</label>
+        <select id="prac-level">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="doPractice()">Generate →</button>
+    </div>
+    <div class="loader" id="prac-loader"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+    <div class="result-wrap" id="prac-result-wrap" style="display:none">
+      <div class="result-header">
+        <div class="result-label">Practice Questions</div>
+        <button class="copy-btn" onclick="copyResult('prac-result')">copy</button>
+      </div>
+      <div class="response-box" id="prac-result"></div>
+    </div>
+  </div>
+
+  <!-- TASK -->
+  <div class="panel" id="panel-task">
+    <div class="panel-head">
+      <h2>Mini Project Task</h2>
+      <p>Get a structured mini project to build hands-on experience.</p>
+    </div>
+    <div class="form-row">
+      <div class="fg fg-wide">
+        <label>Concept</label>
+        <input type="text" id="task-concept" placeholder="e.g. APIs, pandas, classes" />
+      </div>
+      <div class="fg">
+        <label>Level</label>
+        <select id="task-level">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="doTask()">Get Task →</button>
+    </div>
+    <div class="loader" id="task-loader"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+    <div class="result-wrap" id="task-result-wrap" style="display:none">
+      <div class="result-header">
+        <div class="result-label">Your Task</div>
+        <button class="copy-btn" onclick="copyResult('task-result')">copy</button>
+      </div>
+      <div class="response-box" id="task-result"></div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="panel" id="panel-roadmap">
+    <div class="panel-head">
+      <h2>Learning Roadmap</h2>
+      <p>Get a structured beginner-to-advanced roadmap for any topic.</p>
+    </div>
+    <div class="form-row">
+      <div class="fg fg-wide">
+        <label>Topic</label>
+        <input type="text" id="road-topic" placeholder="e.g. Machine Learning, Web Development, Data Science" />
+      </div>
+      <button class="btn btn-primary" onclick="doRoadmap()">Build Roadmap →</button>
+    </div>
+    <div class="loader" id="road-loader"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+    <div class="result-wrap" id="road-result-wrap" style="display:none">
+      <div class="result-header">
+        <div class="result-label">Roadmap</div>
+        <button class="copy-btn" onclick="copyResult('road-result')">copy</button>
+      </div>
+      <div class="response-box" id="road-result"></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel" id="panel-chat">
+    <div class="panel-head">
+      <h2>Chat with Tutor</h2>
+      <p>Ask any programming question and get a clear, example-driven answer.</p>
+    </div>
+    <div class="chat-window" id="chat-window">
+      <div class="chat-msg">
+        <div class="chat-avatar avatar-ai">AI</div>
+        <div class="chat-bubble">Hi! I'm <strong>CodeMind</strong>, your AI-powered programming tutor. Ask me anything — syntax, concepts, debugging, or project ideas. I'm here to help! ⚡</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-q" placeholder="Ask a question…" onkeydown="if(event.key==='Enter') doChat()" />
+      <button class="btn btn-primary" onclick="doChat()">Send →</button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function setLoading(id, on) {
+  document.getElementById(id + '-loader').classList.toggle('active', on);
+}
+
+function showResult(id, text) {
+  const wrap = document.getElementById(id + '-result-wrap');
+  const box  = document.getElementById(id + '-result');
+  if (wrap) wrap.style.display = 'block';
+  if (box)  box.textContent = text;
+}
+
+async function doExplain() {
+  const concept = document.getElementById('exp-concept').value.trim();
+  const level   = document.getElementById('exp-level').value;
+  if (!concept) return;
+  setLoading('exp', true);
+  document.getElementById('exp-result-wrap').style.display = 'none';
+  const res = await fetch('/explain', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({concept, level})
+  });
+  const data = await res.json();
+  setLoading('exp', false);
+  showResult('exp', data.result);
+}
+
+async function doPractice() {
+  const concept = document.getElementById('prac-concept').value.trim();
+  const level   = document.getElementById('prac-level').value;
+  if (!concept) return;
+  setLoading('prac', true);
+  document.getElementById('prac-result-wrap').style.display = 'none';
+  const res = await fetch('/practice', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({concept, level})
+  });
+  const data = await res.json();
+  setLoading('prac', false);
+  showResult('prac', data.result);
+}
+
+async function doTask() {
+  const concept = document.getElementById('task-concept').value.trim();
+  const level   = document.getElementById('task-level').value;
+  if (!concept) return;
+  setLoading('task', true);
+  document.getElementById('task-result-wrap').style.display = 'none';
+  const res = await fetch('/task', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({concept, level})
+  });
+  const data = await res.json();
+  setLoading('task', false);
+  showResult('task', data.result);
+}
+
+async function doRoadmap() {
+  const topic = document.getElementById('road-topic').value.trim();
+  if (!topic) return;
+  setLoading('road', true);
+  document.getElementById('road-result-wrap').style.display = 'none';
+  const res = await fetch('/roadmap', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({topic})
+  });
+  const data = await res.json();
+  setLoading('road', false);
+  showResult('road', data.result);
+}
+
+async function doChat() {
+  const input = document.getElementById('chat-q');
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+
+  const win = document.getElementById('chat-window');
+
+  // User bubble
+  win.innerHTML += `
+    <div class="chat-msg user">
+      <div class="chat-avatar avatar-user">You</div>
+      <div class="chat-bubble">${escHtml(question)}</div>
+    </div>`;
+  win.scrollTop = win.scrollHeight;
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  win.innerHTML += `
+    <div class="chat-msg" id="${typingId}">
+      <div class="chat-avatar avatar-ai">AI</div>
+      <div class="chat-bubble" style="color:var(--muted)">
+        <span class="loader active" style="padding:0">
+          <span class="loader-dot"></span><span class="loader-dot"></span><span class="loader-dot"></span>
+        </span>
+      </div>
+    </div>`;
+  win.scrollTop = win.scrollHeight;
+
+  const res  = await fetch('/chat', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({question})
+  });
+  const data = await res.json();
+
+  const typing = document.getElementById(typingId);
+  if (typing) typing.remove();
+
+  win.innerHTML += `
+    <div class="chat-msg">
+      <div class="chat-avatar avatar-ai">AI</div>
+      <div class="chat-bubble">${escHtml(data.result)}</div>
+    </div>`;
+  win.scrollTop = win.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyResult(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    event.target.textContent = 'copied!';
+    setTimeout(() => event.target.textContent = 'copy', 1500);
+  });
+}
+</script>
+{% endblock %}

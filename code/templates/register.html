@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Register · CodeMind{% endblock %}
+
+{% block head %}
+<style>
+  .auth-wrap {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+  }
+  .auth-card {
+    width: 100%; max-width: 420px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2.5rem;
+    position: relative; overflow: hidden;
+    animation: slideUp 0.5s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .auth-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2));
+  }
+  .auth-logo { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.25rem; }
+  .auth-logo span { color: var(--accent3); }
+  .auth-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .form-group { margin-bottom: 1.1rem; }
+  .form-group label { display: block; margin-bottom: 0.4rem; }
+  .auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--muted); }
+  .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .btn-full { width: 100%; justify-content: center; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo"><span>//</span> CodeMind</div>
+    <p class="auth-sub">Create your learning account</p>
+
+    <form method="POST" action="/register">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="coolcoder42" required />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Create Account →</button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

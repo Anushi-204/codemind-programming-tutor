@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Editor · CodeMind{% endblock %}
+
+{% block head %}
+<style>
+  .page {
+    max-width: 1100px; margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+  .editor-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
+  }
+  .editor-header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; }
+
+  .editor-layout {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+  }
+  @media (max-width: 720px) { .editor-layout { grid-template-columns: 1fr; } }
+
+  .editor-pane {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .pane-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .pane-dots { display: flex; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  #code-input {
+    flex: 1; width: 100%; border: none; outline: none; resize: none;
+    background: var(--card); color: var(--text);
+    font-family: var(--mono); font-size: 0.875rem; line-height: 1.7;
+    padding: 1.2rem; min-height: 340px; border-radius: 0;
+    tab-size: 4;
+  }
+
+  #output {
+    flex: 1; padding: 1.2rem;
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.7;
+    white-space: pre-wrap; word-break: break-word;
+    min-height: 340px; color: var(--accent3);
+    overflow-y: auto;
+  }
+  #output.has-error { color: #ff6b6b; }
+  #output.empty { color: var(--muted); font-style: italic; }
+
+  .run-btn {
+    background: var(--accent3); color: #000;
+    font-weight: 800;
+  }
+  .run-btn:hover { background: #7af5df; transform: translateY(-1px); }
+
+  .shortcut-hint {
+    font-size: 0.72rem; color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .bottom-bar {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-top: 1rem; flex-wrap: wrap;
+  }
+
+  /* line numbers trick */
+  .code-wrap { display: flex; flex: 1; }
+  .line-nums {
+    padding: 1.2rem 0.6rem 1.2rem 1rem;
+    font-family: var(--mono); font-size: 0.875rem; line-height: 1.7;
+    color: var(--muted); user-select: none; text-align: right;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    min-width: 40px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="editor-header">
+    <div>
+      <h1>Code Editor</h1>
+      <p style="color:var(--muted);font-size:0.85rem;margin-top:0.2rem">Write Python and run it instantly in the browser.</p>
+    </div>
+    <span class="shortcut-hint">Ctrl+Enter to run</span>
+  </div>
+
+  <div class="editor-layout">
+    <!-- Code Input -->
+    <div class="editor-pane">
+      <div class="pane-header">
+        <div class="pane-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>main.py</span>
+        <span></span>
+      </div>
+      <div class="code-wrap">
+        <div class="line-nums" id="line-nums">1</div>
+        <textarea id="code-input" spellcheck="false" placeholder="# Write your Python code here&#10;print('Hello, World!')">print("Hello, World!")</textarea>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="editor-pane">
+      <div class="pane-header">
+        <div class="pane-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>Output</span>
+        <button class="copy-btn" id="copy-out" onclick="copyOutput()" style="padding:0.2rem 0.5rem;font-size:0.7rem;background:var(--border);border:none;border-radius:4px;color:var(--muted);cursor:pointer;font-family:var(--mono)">copy</button>
+      </div>
+      <div id="output" class="empty">▶ Run your code to see output…</div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn run-btn" onclick="runCode()">▶ Run Code</button>
+    <button class="btn btn-secondary" onclick="clearEditor()">Clear</button>
+    <div class="loader" id="run-loader"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const codeInput = document.getElementById('code-input');
+const lineNums  = document.getElementById('line-nums');
+const output    = document.getElementById('output');
+
+// Update line numbers
+function updateLines() {
+  const lines = codeInput.value.split('\n').length;
+  lineNums.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+}
+codeInput.addEventListener('input', updateLines);
+codeInput.addEventListener('scroll', () => { lineNums.scrollTop = codeInput.scrollTop; });
+updateLines();
+
+// Tab key support
+codeInput.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = codeInput.selectionStart;
+    codeInput.value = codeInput.value.substring(0, s) + '    ' + codeInput.value.substring(s);
+    codeInput.selectionStart = codeInput.selectionEnd = s + 4;
+    updateLines();
+  }
+  if (e.key === 'Enter' && e.ctrlKey) runCode();
+});
+
+async function runCode() {
+  const code = codeInput.value;
+  if (!code.trim()) return;
+
+  output.className = '';
+  output.textContent = '';
+  document.getElementById('run-loader').classList.add('active');
+
+  try {
+    const res  = await fetch('/run_code', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({code})
+    });
+    const data = await res.json();
+    output.textContent = data.output || '(no output)';
+    output.className = data.output && data.output.toLowerCase().includes('error') ? 'has-error' : '';
+  } catch (err) {
+    output.textContent = 'Error: ' + err.message;
+    output.className = 'has-error';
+  }
+
+  document.getElementById('run-loader').classList.remove('active');
+}
+
+function clearEditor() {
+  codeInput.value = '';
+  output.textContent = '▶ Run your code to see output…';
+  output.className = 'empty';
+  updateLines();
+}
+
+function copyOutput() {
+  const btn = document.getElementById('copy-out');
+  navigator.clipboard.writeText(output.textContent).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+</script>
+{% endblock %}
